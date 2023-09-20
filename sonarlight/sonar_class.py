@@ -250,10 +250,14 @@ class Sonar:
 
         sidescan_x = np.expand_dims(data["x"], axis=1) + dist_stack * np.cos(np.expand_dims(data["gps_heading"], axis=1))
         sidescan_y = np.expand_dims(data["y"], axis=1) - dist_stack * np.sin(np.expand_dims(data["gps_heading"], axis=1))
+        sidescan_df = pd.DataFrame({"x": sidescan_x.ravel(),
+                                    "y": sidescan_y.ravel(),
+                                    "z": sidescan_z.ravel()})
+
+        sidescan_df["longitude"] = self._x2lon(sidescan_df["x"])
+        sidescan_df["latitude"] = self._y2lat(sidescan_df["y"])
         
-        return(pd.DataFrame({"x": sidescan_x.ravel(),
-                            "y": sidescan_y.ravel(),
-                            "z": sidescan_z.ravel()}))
+        return(sidescan_df)
     
     def _interp_water(self, water, depth, out_len):
         x = np.linspace(0, depth, num=out_len)
