@@ -4,7 +4,13 @@ The `sonarlight` package provides tools for working with Lowrance sonar data in 
 Project home is [https://github.com/KennethTM/sonarlight](https://github.com/KennethTM/sonarlight).
 
 ## Installation
-To install the `sonarlight` package, simply run `pip install sonarlight`. The package requires the `numpy` and `pandas` packages to be installed.
+To install the `sonarlight` package, simply run 
+
+```
+pip install sonarlight
+```
+
+The package requires the `numpy` and `pandas` packages to be installed.
 
 ## Example data
 Small example files of the `.sl2` and `.sl3` formats are provided in the `example_files` folder.
@@ -51,8 +57,10 @@ File info: version 2, device 2, blocksize 3200, frame version 8
 #View raw data store in Pandas dataframe
 sl2.df
 
-#Each row contains metadata and pixel for each recorded frame. Pixels are stored in the "frames" column.
-#The dataframe can be saved for further processing, for example the Parquet file format that supports nested data structues.
+#Each row contains metadata and pixel for each recorded frame.
+#Pixels are stored in the "frames" column.
+#The dataframe can be saved for further processing, 
+#for example the Parquet file format that supports nested data structues.
 sl2.df.to_parquet('sl2.parquet')
 
 #Or to '.csv' file
@@ -74,7 +82,6 @@ plt.scatter(route["longitude"], route["latitude"], c=route["water_depth"], s = 3
 plt.colorbar()
 ```
 
-![](https://github.com/KennethTM/sonarlight/blob/main/images/example_notebook_route.png)
 
 ```python
 #Plot primary channel
@@ -118,12 +125,14 @@ plt.scatter(mosaic.x[::10],
 ## Ressources
 The package is inspired by and builds upon other tools and descriptions for processing Lowrance sonar data, e.g. [SL3Reader](https://github.com/halmaia/SL3Reader) which includes a usefull paper, [python-sllib](https://github.com/opensounder/python-sllib), [sonaR](https://github.com/KennethTM/sonaR), [Navico_SLG_Format notes](https://www.memotech.franken.de/FileFormats/Navico_SLG_Format.pdf), older [blog post](https://www.datainwater.com/post/sonar_numpy/).
 
-# TODO
+## TODO
 
 * Notebook with extended processing examples.
 * Improve memory/speed. The package can process large files (>1 GB) rather quickly but does consume some RAM.
 * Coordinate augmentation/correction.
 * Parse 3D data.
+
+## Other image examples
 
 ![](https://github.com/KennethTM/sonarlight/blob/main/images/primary_void.png)
 
