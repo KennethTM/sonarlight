@@ -1,5 +1,5 @@
 other/
-PySonar/__pycache__/
+sonarlight/__pycache__/
 
 # Distribution / packaging
 .Python

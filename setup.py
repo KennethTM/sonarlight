@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
+from pathlib import Path
 
 VERSION = '0.0.1' 
 DESCRIPTION = 'sonarlight'
-LONG_DESCRIPTION = 'Package reading and exploring the content of the sonar data files'
+LONG_DESCRIPTION = Path("README.md").read_text()
 
 setup(
     name="sonarlight", 
