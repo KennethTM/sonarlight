@@ -1,8 +1,6 @@
 # sonarlight
 The `sonarlight` package provides tools for working with Lowrance sonar data in the `.sl2` and `.sl3` formats. The package includes the `Sonar` class for reading and parsing these files, as well as methods for extracting various types of information from the data. 
 
-The package is inspired by other similar tools for processing Lowrance sonar data, e.g. [SL3Reader](https://github.com/halmaia/SL3Reader) which includes a usefull paper, [python-sllib](https://github.com/opensounder/python-sllib), [sonaR](https://github.com/KennethTM/sonaR), [Navico_SLG_Format notes](https://www.memotech.franken.de/FileFormats/Navico_SLG_Format.pdf).
-
 Project home is [https://github.com/KennethTM/sonarlight](https://github.com/KennethTM/sonarlight).
 
 ## Installation
@@ -74,21 +72,37 @@ import matplotlib.pyplot as plt
 route = sl2.df.query("survey == 'primary'")
 plt.scatter(route["longitude"], route["latitude"], c=route["water_depth"], s = 3)
 plt.colorbar()
+```
 
+![](https://github.com/KennethTM/sonarlight/blob/main/images/example_notebook_route.png)
+
+```python
 #Plot primary channel
 prim = sl2.image("primary")
 plt.imshow(prim.transpose())
+```
 
+![](https://github.com/KennethTM/sonarlight/blob/main/images/example_notebook_image.png)
+
+```python
 #Plot water column (surface to water_depth) from downscan channel
 #Individual frames are linearly interpolated of length 'pixels'
 downscan_water = sl2.water("downscan", pixels=300)
 plt.imshow(downscan_water.transpose())
+```
 
+![](https://github.com/KennethTM/sonarlight/blob/main/images/example_notebook_water.png)
+
+```python
 #Plot bottom column (water_depth to max sonar range) from primary channel
 #Individual frames are subsetted to match the minimum length of the bottom frames
 secondary_bottom = sl2.bottom("secondary")
 plt.imshow(secondary_bottom.transpose())
+```
 
+![](https://github.com/KennethTM/sonarlight/blob/main/images/example_notebook_bottom.png)
+
+```python
 #Plot sidescan georeferenced points
 #Convert sidescan imagery to XYZ point cloud
 #Note that this can result in MANY points, every 10'th point are plotted here
@@ -97,10 +111,19 @@ plt.scatter(mosaic.x[::10],
             mosaic.y[::10], 
             c=mosaic.z[::10], 
             cmap="cividis", s=0.1)
-
 ```
 
-## Image examples
+![](https://github.com/KennethTM/sonarlight/blob/main/images/example_notebook_xyz.png)
+
+## Ressources
+The package is inspired by and builds upon other tools and descriptions for processing Lowrance sonar data, e.g. [SL3Reader](https://github.com/halmaia/SL3Reader) which includes a usefull paper, [python-sllib](https://github.com/opensounder/python-sllib), [sonaR](https://github.com/KennethTM/sonaR), [Navico_SLG_Format notes](https://www.memotech.franken.de/FileFormats/Navico_SLG_Format.pdf), older [blog post](https://www.datainwater.com/post/sonar_numpy/).
+
+# TODO
+
+* Notebook with extended processing examples.
+* Improve memory/speed. The package can process large files (>1 GB) rather quickly but does consume some RAM.
+* Coordinate augmentation/correction.
+* Parse 3D data.
 
 ![](https://github.com/KennethTM/sonarlight/blob/main/images/primary_void.png)
 

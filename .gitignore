@@ -1,5 +1,6 @@
 other/
 sonarlight/__pycache__/
+tests/__pycache__/
 
 # Distribution / packaging
 .Python
