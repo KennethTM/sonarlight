@@ -18,13 +18,13 @@ Small example files of the `.sl2` and `.sl3` formats are provided in the `exampl
 ## Usage
 Once installed, you can use the `Sonar` class to read and parse sonar data from a `.sl2` or `.sl3` file. The class contains a few methods for extracting data:
 
-* Sonar.image method to extract the raw sonar image for a specific channel
-* Sonar.sidescan_xyz method to extract georeferenced sidescan data as XYZ coordinates
-* Sonar.water method to extract the water column part of the the raw sonar imagery for a specific channel
-* Sonar.bottom method to extract the bottom (sediment) part of the the raw sonar imagery for a specific channel
-* Sonar.bottom_intensity method to extract raw sonar intensity at the bottom
+* `Sonar.image()` method to extract the raw sonar image for a specific channel
+* `Sonar.sidescan_xyz()` method to extract georeferenced sidescan data as XYZ coordinates
+* `Sonar.water()` method to extract the water column part of the the raw sonar imagery for a specific channel
+* `Sonar.bottom()` method to extract the bottom (sediment) part of the the raw sonar imagery for a specific channel
+* `Sonar.bottom_intensity()` method to extract raw sonar intensity at the bottom
 
-When `clean=True` (default) some light data cleaning is performed including dropping unknown columns and rows and observation where the water depth is 0. 
+When reading a file with `Sonar()` and argument `clean=True` (default) some light data cleaning is performed including dropping unknown columns and rows and observation where the water depth is 0. 
 
 The functionality of the class is showcased below and included in the `example_notebook.ipynb`.
 
