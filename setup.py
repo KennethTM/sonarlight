@@ -1,28 +1,28 @@
 from setuptools import setup, find_packages
 
 VERSION = '0.0.1' 
-DESCRIPTION = 'PySonar'
+DESCRIPTION = 'sonarlight'
 LONG_DESCRIPTION = 'Package reading and exploring the content of the sonar data files'
 
 setup(
-        name="PySonar", 
-        version=VERSION,
-        author="Kenneth Thorø Martinsen",
-        author_email="<kenneth2810@gmail.com>",
-        description=DESCRIPTION,
-        long_description=LONG_DESCRIPTION,
-        packages=find_packages(),
-        install_requires=[],         
-        keywords=['python'],
-        classifiers= [
-            "Development Status :: 3 - Alpha",
-            "Intended Audience :: Education",
-            "Intended Audience :: Science/Research",
-            "Programming Language :: Python :: 3",
-            "License :: OSI Approved :: MIT License",
-            "Topic :: Scientific/Engineering",
-            "Topic :: Scientific/Engineering :: Visualization",
-            "Topic :: Scientific/Engineering :: Oceanography",
-            "Topic :: Scientific/Engineering :: GIS"
-        ]
+    name="sonarlight", 
+    version=VERSION,
+    author="Kenneth Thorø Martinsen",
+    author_email="kenneth2810@gmail.com",
+    description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
+    packages=find_packages(),
+    install_requires=["numpy", "pandas"],
+    keywords=['python'],
+    classifiers= [
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Visualization",
+        "Topic :: Scientific/Engineering :: Oceanography",
+        "Topic :: Scientific/Engineering :: GIS"
+    ]
 )
