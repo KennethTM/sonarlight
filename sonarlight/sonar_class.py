@@ -267,7 +267,7 @@ class Sonar:
         The water column part extends from the surface to water depth.
         Linear interpolation is performed for each sonar ping to create arrays of equal length of size "pixels"'''
 
-        if channel not in self.valid_channels:
+        if channel not in self.valid_channels or channel == "sidescan":
             raise ValueError(f'Valid channels: {", ".join(self.valid_channels)}')
         
         data = self.df.query(f"survey == '{channel}'")
@@ -281,7 +281,7 @@ class Sonar:
         The bottom part extends from the water depth to the maximum range of the sonar.
         The length of the arrays are determined by the minimum length of all bottom pings for the survey'''
         
-        if channel not in self.valid_channels:
+        if channel not in self.valid_channels or channel == "sidescan":
             raise ValueError(f'Valid channels: {", ".join(self.valid_channels)}')
         
         data = self.df.query(f"survey == '{channel}'")
@@ -294,7 +294,7 @@ class Sonar:
     def bottom_intensity(self, channel: str) -> "np.array":
         '''Extract raw sonar intensity at the bottom'''
         
-        if channel not in self.valid_channels:
+        if channel not in self.valid_channels or channel == "sidescan":
             raise ValueError(f'Valid channels: {", ".join(self.valid_channels)}')
         
         data = self.df.query(f"survey == '{channel}'")
