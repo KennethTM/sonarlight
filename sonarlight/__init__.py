@@ -1,1 +1,1 @@
-from sonar import Sonar
+from .sonar_class import Sonar
