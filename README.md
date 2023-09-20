@@ -82,6 +82,7 @@ plt.scatter(route["longitude"], route["latitude"], c=route["water_depth"], s = 3
 plt.colorbar()
 ```
 
+![](https://github.com/KennethTM/sonarlight/blob/main/images/example_notebook_route.png)
 
 ```python
 #Plot primary channel
