@@ -1,3 +1,6 @@
+other/
+PySonar/__pycache__/
+
 # Distribution / packaging
 .Python
 build/
