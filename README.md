@@ -4,7 +4,7 @@ The `sonarlight` package provides tools for working with Lowrance sonar data in 
 Project home is [https://github.com/KennethTM/sonarlight](https://github.com/KennethTM/sonarlight).
 
 ## Installation
-To install the `sonarlight` package, simply run 
+To install the `sonarlight` package, simply run:
 
 ```
 pip install sonarlight
@@ -128,7 +128,7 @@ The package is inspired by and builds upon other tools and descriptions for proc
 ## TODO
 
 * Notebook with extended processing examples.
-* Improve memory/speed. The package can process large files (>1 GB) rather quickly but does consume some RAM.
+* Improve memory/speed efficiency. The package can process large files (>1 GB) rather snappy but does consume some RAM.
 * Coordinate augmentation/correction.
 * Parse 3D data.
 
