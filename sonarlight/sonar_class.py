@@ -226,7 +226,7 @@ class Sonar:
         
         return(base_string)
         
-    def image(self, channel: str) -> "np.array":
+    def image(self, channel: str) -> np.ndarray:
         '''Extract the raw sonar image for a specific channel'''
         
         if channel not in self.valid_channels:
@@ -234,7 +234,7 @@ class Sonar:
         
         return(np.stack(self.df.query(f"survey == '{channel}'")["frames"]))            
     
-    def sidescan_xyz(self) -> "pd.DataFrame":
+    def sidescan_xyz(self) -> pd.DataFrame:
         '''Extract georeferenced sidescan data as XYZ coordinates'''
 
         if "sidescan" not in self.valid_channels:
@@ -262,7 +262,7 @@ class Sonar:
         
         return(y)
 
-    def water(self, channel: str, pixels: int) -> "np.array":
+    def water(self, channel: str, pixels: int) -> np.ndarray:
         '''Extract the water column part of the the raw sonar imagery for a specific channel.
         The water column part extends from the surface to water depth.
         Linear interpolation is performed for each sonar ping to create arrays of equal length of size "pixels"'''
@@ -276,7 +276,7 @@ class Sonar:
         
         return(np.stack(frames_water_interp))
     
-    def bottom(self, channel: str) -> "np.array":
+    def bottom(self, channel: str) -> np.ndarray:
         '''Extract the bottom (sediment) part of the the raw sonar imagery for a specific channel.
         The bottom part extends from the water depth to the maximum range of the sonar.
         The length of the arrays are determined by the minimum length of all bottom pings for the survey'''
@@ -291,7 +291,7 @@ class Sonar:
         
         return(np.stack(frames_bottom_cut))
 
-    def bottom_intensity(self, channel: str) -> "np.array":
+    def bottom_intensity(self, channel: str) -> np.ndarray:
         '''Extract raw sonar intensity at the bottom'''
         
         if channel not in self.valid_channels or channel == "sidescan":
