@@ -1,8 +1,10 @@
 #Definition of Sonar class
 
+from re import S
 import numpy as np
 import pandas as pd
 import math
+from scipy.interpolate import UnivariateSpline
 
 #dtype for '.sl2' files (144 bytes)
 sl2_frame_dtype = np.dtype([
@@ -123,10 +125,11 @@ class Sonar:
                                9: "40kHz_60kHz", 10: "25kHz_45kHz"}
         
         self.vars_to_keep = ["id", "survey", "datetime",
-                             "x", "y", "x_augmented", "y_augmented", "longitude", "latitude", 
-                             "min_range", "max_range", "water_depth",
-                             "gps_speed", "gps_heading", "gps_altitude", 
-                             "bottom_index", "frames"]
+                             "x", "y", "x_augmented", "y_augmented", 
+                             "longitude", "latitude", "smoothed_longitude", 
+                             "smoothed_latitude", "min_range", "max_range", 
+                             "water_depth", "gps_speed", "gps_heading", 
+                             "gps_altitude", "bottom_index", "frames"]
         
         self._read_bin()
         self._parse_header()
@@ -239,7 +242,14 @@ class Sonar:
             
                 self.df.loc[i, 'x_augmented'] = x0
                 self.df.loc[i, 'y_augmented'] = y0
-
+    
+    def _smooth_track(self):
+        smoothing_factor = 0.0000002
+        frame_order = range(len(self.df))
+        spline_longitude = UnivariateSpline(frame_order, self.df['longitude'], s=smoothing_factor)
+        spline_latitude = UnivariateSpline(frame_order, self.df['latitude'], s=smoothing_factor)
+        self.df["smoothed_longitude"] = spline_longitude(frame_order)
+        self.df["smoothed_latitude"] = spline_latitude(frame_order)
     
     def _process(self):
         self.df[["water_depth", "min_range", "max_range", "gps_altitude"]] /= 3.2808399 #feet to meter
@@ -254,8 +264,8 @@ class Sonar:
         self._augment_coords()
         self.df["longitude"] = self._x2lon(self.df["x_augmented"])
         self.df["latitude"] = self._y2lat(self.df["y_augmented"])
-        
-        
+        self._smooth_track()
+
     def _valid_channels(self):
         found_channels = set(self.df["survey"].tolist())
         self.valid_channels = [i for i in self.supported_channels if i in found_channels]
