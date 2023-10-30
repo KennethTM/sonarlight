@@ -16,15 +16,17 @@ The package requires the `numpy` and `pandas` packages to be installed.
 Small example files of the `.sl2` and `.sl3` formats are provided in the `example_files` folder.
 
 ## Usage
-Once installed, you can use the `Sonar` class to read and parse sonar data from a `.sl2` or `.sl3` file. The class contains a few methods for extracting data:
+Once installed, you can use the `Sonar` class to read and parse sonar data from a `.sl2` or `.sl3` file.
+
+When reading a file with `Sonar()` with argument `clean=True` (default) some light data cleaning is performed including dropping unknown columns and rows and observation where the water depth is 0. Setting `augment_coords=True` performs augmentation of the recorded coordinates as implemented in [SL3Reader](https://github.com/halmaia/SL3Reader). Coordinate augmentation attempts to make up for the reduced precision in the recorded coordinates which are rounded to the nearest meter.
+
+The class contains a few methods for extracting data:
 
 * `Sonar.image()` method to extract the raw sonar image for a specific channel
 * `Sonar.sidescan_xyz()` method to extract georeferenced sidescan data as XYZ coordinates
 * `Sonar.water()` method to extract the water column part of the the raw sonar imagery for a specific channel
 * `Sonar.bottom()` method to extract the bottom (sediment) part of the the raw sonar imagery for a specific channel
 * `Sonar.bottom_intensity()` method to extract raw sonar intensity at the bottom
-
-When reading a file with `Sonar()` with argument `clean=True` (default) some light data cleaning is performed including dropping unknown columns and rows and observation where the water depth is 0. Setting `augment_coords=True` performs augmentation of the recorded coordinates as implemented in `SL3Reader`. Coordinate augmentation attempts to make up for the reduced precision in the recorded coordinates which are rounded to the nearest meter.
 
 The functionality of the class is showcased below and included in the `example_notebook.ipynb`.
 

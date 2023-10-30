@@ -5,6 +5,7 @@ DESCRIPTION = 'sonarlight'
 LONG_DESCRIPTION = Path("README.md").read_text()
 
 exec(open('sonarlight/version.py').read())
+
 setup(
     name="sonarlight", 
     version=__version__,

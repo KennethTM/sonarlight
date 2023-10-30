@@ -99,73 +99,6 @@ sl3_frame_dtype = np.dtype([
     ("prev_3d_offseft", "<u4")
 ])
 
-def coordinate_augmentation(df):
-
-    df = df.reset_index(drop=True)
-
-    df['x_augmented'] = float('nan')
-    df['y_augmented'] = float('nan')
-
-    df.loc[0, 'x_augmented'] = df.loc[0, 'x']
-    df.loc[0, 'y_augmented'] = df.loc[0, 'y']
-
-    x0 = df.loc[0, 'x']
-    y0 = df.loc[0, 'y']
-
-    v0 = df.loc[0, 'gps_speed']
-    t0 = df.loc[0, 'seconds']
-    d0 = math.tau - df.loc[0, 'gps_heading'] + (math.pi / 2)
-
-    c = 1.4326
-    lim = 1.2
-
-    for i in range(1, len(df)):
-        t1 = df.loc[i, 'seconds']
-        v1 = df.loc[i, 'gps_speed']
-        d1 = math.tau - df.loc[i, 'gps_heading'] + (math.pi / 2)
-
-        x1 = df.loc[i, 'x']
-        y1 = df.loc[i, 'y']
-
-        if t1 == t0:
-            df.loc[i, 'x_augmented'] = x0
-            df.loc[i, 'y_augmented'] = y0
-        else:
-            vx0 = math.cos(d0) * v0
-            vy0 = math.sin(d0) * v0
-            vx1 = math.cos(d1) * v1
-            vy1 = math.sin(d1) * v1
-            dt = t1 - t0
-
-            x0 += c * 0.5 * (vx0 + vx1) * dt
-            y0 += c * 0.5 * (vy0 + vy1) * dt
-
-            d0 = d1
-            t0 = t1
-            v0 = v1
-
-            if df.loc[i, 'survey_type'] in [0, 1]:
-                dy = y0 - y1
-                if abs(dy) > lim:
-                    y0 = y1 + math.copysign(lim, dy)
-
-                dx = x0 - x1
-                if abs(dx) > lim:
-                    x0 = x1 + math.copysign(lim, dx)
-            else:
-                dy = y0 - y1
-                if abs(dy) > 50:  # Detect serious errors.
-                    y0 = df.loc[i, 'y']
-
-                dx = x0 - x1
-                if abs(dx) > 50:  # Detect serious errors.
-                    x0 = df.loc[i, 'x']
-        
-            df.loc[i, 'x_augmented'] = x0
-            df.loc[i, 'y_augmented'] = y0
-
-    return(df)
-
 class Sonar:
     '''
     Class for reading and parsing the content of the Lowrance '.sl2' and '.sl3' file formats used to store sonar data.
@@ -211,7 +144,7 @@ class Sonar:
         self._valid_channels()
 
         if augment_coords:
-            self.df = self.df.groupby("survey_type", as_index=False).apply(coordinate_augmentation).reset_index(drop=True)
+            self._coordinate_augmentation()
             self.df["longitude_augmented"] = self._x2lon(self.df["x_augmented"])
             self.df["latitude_augmented"] = self._y2lat(self.df["y_augmented"])
 
@@ -271,6 +204,69 @@ class Sonar:
         self.frame_version = self.df["frame_version"].iloc[0]
         self.df["longitude"] = self._x2lon(self.df["x"])
         self.df["latitude"] = self._y2lat(self.df["y"])
+
+    def _coordinate_augmentation(self):
+
+        self.df['x_augmented'] = float('nan')
+        self.df['y_augmented'] = float('nan')
+
+        self.df.loc[0, 'x_augmented'] = self.df.loc[0, 'x']
+        self.df.loc[0, 'y_augmented'] = self.df.loc[0, 'y']
+
+        x0 = self.df.loc[0, 'x']
+        y0 = self.df.loc[0, 'y']
+
+        v0 = self.df.loc[0, 'gps_speed']
+        t0 = self.df.loc[0, 'seconds']
+        d0 = math.tau - self.df.loc[0, 'gps_heading'] + (math.pi / 2)
+
+        c = 1.4326
+        lim = 1.2
+
+        for i in range(1, len(self.df)):
+            t1 = self.df.loc[i, 'seconds']
+            v1 = self.df.loc[i, 'gps_speed']
+            d1 = math.tau - self.df.loc[i, 'gps_heading'] + (math.pi / 2)
+
+            x1 = self.df.loc[i, 'x']
+            y1 = self.df.loc[i, 'y']
+
+            if t1 == t0:
+                self.df.loc[i, 'x_augmented'] = x0
+                self.df.loc[i, 'y_augmented'] = y0
+            else:
+                vx0 = math.cos(d0) * v0
+                vy0 = math.sin(d0) * v0
+                vx1 = math.cos(d1) * v1
+                vy1 = math.sin(d1) * v1
+                dt = t1 - t0
+
+                x0 += c * 0.5 * (vx0 + vx1) * dt
+                y0 += c * 0.5 * (vy0 + vy1) * dt
+
+                d0 = d1
+                t0 = t1
+                v0 = v1
+
+                if self.df.loc[i, 'survey_type'] in [0, 1]:
+                    dy = y0 - y1
+                    if abs(dy) > lim:
+                        y0 = y1 + math.copysign(lim, dy)
+
+                    dx = x0 - x1
+                    if abs(dx) > lim:
+                        x0 = x1 + math.copysign(lim, dx)
+                else:
+                    dy = y0 - y1
+                    if abs(dy) > 50:  # Detect serious errors.
+                        y0 = self.df.loc[i, 'y']
+
+                    dx = x0 - x1
+                    if abs(dx) > 50:  # Detect serious errors.
+                        x0 = self.df.loc[i, 'x']
+            
+                self.df.loc[i, 'x_augmented'] = x0
+                self.df.loc[i, 'y_augmented'] = y0
         
     def _valid_channels(self):
         found_channels = set(self.df["survey"].tolist())
