@@ -1,8 +1,10 @@
 #Definition of Sonar class
 
+from re import S
 import numpy as np
 import pandas as pd
 import math
+from scipy.interpolate import UnivariateSpline
 
 #dtype for '.sl2' files (144 bytes)
 sl2_frame_dtype = np.dtype([
@@ -123,10 +125,11 @@ class Sonar:
                                9: "40kHz_60kHz", 10: "25kHz_45kHz"}
         
         self.vars_to_keep = ["id", "survey", "datetime",
-                             "x", "y", "longitude", "latitude", 
-                             "min_range", "max_range", "water_depth",
-                            "gps_speed", "gps_heading", "gps_altitude", 
-                            "bottom_index", "frames"]
+                             "x", "y", "x_augmented", "y_augmented", 
+                             "longitude", "latitude", "smoothed_longitude", 
+                             "smoothed_latitude", "min_range", "max_range", 
+                             "water_depth", "gps_speed", "gps_heading", 
+                             "gps_altitude", "bottom_index", "frames"]
         
         self._read_bin()
         self._parse_header()
@@ -179,11 +182,76 @@ class Sonar:
         return(frame_bottom_index)
     
     def _augment_coords(self):
-        pass        
+        self.df['x_augmented'] = float('nan')
+        self.df['y_augmented'] = float('nan')
+
+        self.df.loc[0, 'x_augmented'] = self.df.loc[0, 'x']
+        self.df.loc[0, 'y_augmented'] = self.df.loc[0, 'y']
+
+        x0 = self.df.loc[0, 'x']
+        y0 = self.df.loc[0, 'y']
+
+        v0 = self.df.loc[0, 'gps_speed']
+        t0 = self.df.loc[0, 'seconds']
+        d0 = math.tau - self.df.loc[0, 'gps_heading'] + (math.pi / 2)
+
+        c = 1.4326
+        lim = 1.2
+
+        for i in range(1, len(self.df)):
+            t1 = self.df.loc[i, 'seconds']
+            v1 = self.df.loc[i, 'gps_speed']
+            d1 = math.tau - self.df.loc[i, 'gps_heading'] + (math.pi / 2)
+
+            x1 = self.df.loc[i, 'x']
+            y1 = self.df.loc[i, 'y']
+
+            if t1 == t0:
+                self.df.loc[i, 'x_augmented'] = x0
+                self.df.loc[i, 'y_augmented'] = y0
+            else:
+                vx0 = math.cos(d0) * v0
+                vy0 = math.sin(d0) * v0
+                vx1 = math.cos(d1) * v1
+                vy1 = math.sin(d1) * v1
+                dt = t1 - t0
+
+                x0 += c * 0.5 * (vx0 + vx1) * dt
+                y0 += c * 0.5 * (vy0 + vy1) * dt
+
+                d0 = d1
+                t0 = t1
+                v0 = v1
+
+                if self.df.loc[i, 'survey_type'] in [0, 1]:
+                    dy = y0 - y1
+                    if abs(dy) > lim:
+                        y0 = y1 + math.copysign(lim, dy)
+
+                    dx = x0 - x1
+                    if abs(dx) > lim:
+                        x0 = x1 + math.copysign(lim, dx)
+                else:
+                    dy = y0 - y1
+                    if abs(dy) > 50:  # Detect serious errors.
+                        y0 = self.df.loc[i, 'y']
+
+                    dx = x0 - x1
+                    if abs(dx) > 50:  # Detect serious errors.
+                        x0 = self.df.loc[i, 'x']
+            
+                self.df.loc[i, 'x_augmented'] = x0
+                self.df.loc[i, 'y_augmented'] = y0
+    
+    def _smooth_track(self):
+        smoothing_factor = 0.0000002
+        frame_order = range(len(self.df))
+        spline_longitude = UnivariateSpline(frame_order, self.df['longitude'], s=smoothing_factor)
+        spline_latitude = UnivariateSpline(frame_order, self.df['latitude'], s=smoothing_factor)
+        self.df["smoothed_longitude"] = spline_longitude(frame_order)
+        self.df["smoothed_latitude"] = spline_latitude(frame_order)
     
     def _process(self):
-        self.df["longitude"] = self._x2lon(self.df["x"])
-        self.df["latitude"] = self._y2lat(self.df["y"])
         self.df[["water_depth", "min_range", "max_range", "gps_altitude"]] /= 3.2808399 #feet to meter
         self.df["gps_speed"] *=  0.5144 #knots to m/s
         self.df["survey"] = [self.survey_dict.get(i, "unknown") for i in self.df["survey_type"]]
@@ -193,7 +261,11 @@ class Sonar:
         self.df["datetime"] = pd.to_datetime(hardware_time_start+self.df["seconds"], unit='s')
         self.df["bottom_index"] = self._bottom_index()
         self.frame_version = self.df["frame_version"].iloc[0]
-        
+        self._augment_coords()
+        self.df["longitude"] = self._x2lon(self.df["x_augmented"])
+        self.df["latitude"] = self._y2lat(self.df["y_augmented"])
+        self._smooth_track()
+
     def _valid_channels(self):
         found_channels = set(self.df["survey"].tolist())
         self.valid_channels = [i for i in self.supported_channels if i in found_channels]
