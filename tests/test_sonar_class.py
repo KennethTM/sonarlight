@@ -7,10 +7,29 @@ class TestMyModule(unittest.TestCase):
     def setUp(self):
         self.sl2 = Sonar("example_files/example_sl2_file.sl2")
         self.sl3 = Sonar("example_files/example_sl3_file.sl3")
+        self.sl2_augment = Sonar("example_files/example_sl2_file.sl2", augment_coords=True)
+        self.sl3_augment = Sonar("example_files/example_sl3_file.sl3", augment_coords=True)
 
     def test_class(self):
         self.assertIsInstance(self.sl2, Sonar)
         self.assertIsInstance(self.sl3, Sonar)
+
+    def test_class_with_augment(self):
+        self.assertIsInstance(self.sl2_augment, Sonar)
+        self.assertIsInstance(self.sl3_augment, Sonar)
+
+    def test_shape_with_augment(self):
+        #Does augmented dataframe shape with four new columns match non-augmented frame?
+        sl2_shape = list(self.sl2.df.shape)
+        sl2_aug_shape = list(self.sl2_augment.df.shape)
+        sl2_shape[1] += 4
+
+        sl3_shape = list(self.sl3.df.shape)
+        sl3_aug_shape = list(self.sl3_augment.df.shape)
+        sl3_shape[1] += 4
+
+        self.assertEqual(sl2_shape, sl2_aug_shape)
+        self.assertEqual(sl3_shape, sl3_aug_shape)
 
     def test_sl2_version(self):
         self.assertEqual(self.sl2.version, 2)

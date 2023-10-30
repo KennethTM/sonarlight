@@ -24,7 +24,7 @@ Once installed, you can use the `Sonar` class to read and parse sonar data from 
 * `Sonar.bottom()` method to extract the bottom (sediment) part of the the raw sonar imagery for a specific channel
 * `Sonar.bottom_intensity()` method to extract raw sonar intensity at the bottom
 
-When reading a file with `Sonar()` and argument `clean=True` (default) some light data cleaning is performed including dropping unknown columns and rows and observation where the water depth is 0. 
+When reading a file with `Sonar()` with argument `clean=True` (default) some light data cleaning is performed including dropping unknown columns and rows and observation where the water depth is 0. Setting `augment_coords=True` performs augmentation of the recorded coordinates as implemented in `SL3Reader`. Coordinate augmentation attempts to make up for the reduced precision in the recorded coordinates which are rounded to the nearest meter.
 
 The functionality of the class is showcased below and included in the `example_notebook.ipynb`.
 

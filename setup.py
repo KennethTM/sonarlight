@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 from pathlib import Path
 
-VERSION = '0.1.2' 
 DESCRIPTION = 'sonarlight'
 LONG_DESCRIPTION = Path("README.md").read_text()
 
+exec(open('sonarlight/version.py').read())
 setup(
     name="sonarlight", 
-    version=VERSION,
+    version=__version__,
     author="Kenneth Thorø Martinsen",
     author_email="kenneth2810@gmail.com",
     description=DESCRIPTION,

@@ -1,10 +1,8 @@
 #Definition of Sonar class
 
-from re import S
 import numpy as np
 import pandas as pd
 import math
-from scipy.interpolate import UnivariateSpline
 
 #dtype for '.sl2' files (144 bytes)
 sl2_frame_dtype = np.dtype([
@@ -101,11 +99,83 @@ sl3_frame_dtype = np.dtype([
     ("prev_3d_offseft", "<u4")
 ])
 
+def coordinate_augmentation(df):
+
+    df = df.reset_index(drop=True)
+
+    df['x_augmented'] = float('nan')
+    df['y_augmented'] = float('nan')
+
+    df.loc[0, 'x_augmented'] = df.loc[0, 'x']
+    df.loc[0, 'y_augmented'] = df.loc[0, 'y']
+
+    x0 = df.loc[0, 'x']
+    y0 = df.loc[0, 'y']
+
+    v0 = df.loc[0, 'gps_speed']
+    t0 = df.loc[0, 'seconds']
+    d0 = math.tau - df.loc[0, 'gps_heading'] + (math.pi / 2)
+
+    c = 1.4326
+    lim = 1.2
+
+    for i in range(1, len(df)):
+        t1 = df.loc[i, 'seconds']
+        v1 = df.loc[i, 'gps_speed']
+        d1 = math.tau - df.loc[i, 'gps_heading'] + (math.pi / 2)
+
+        x1 = df.loc[i, 'x']
+        y1 = df.loc[i, 'y']
+
+        if t1 == t0:
+            df.loc[i, 'x_augmented'] = x0
+            df.loc[i, 'y_augmented'] = y0
+        else:
+            vx0 = math.cos(d0) * v0
+            vy0 = math.sin(d0) * v0
+            vx1 = math.cos(d1) * v1
+            vy1 = math.sin(d1) * v1
+            dt = t1 - t0
+
+            x0 += c * 0.5 * (vx0 + vx1) * dt
+            y0 += c * 0.5 * (vy0 + vy1) * dt
+
+            d0 = d1
+            t0 = t1
+            v0 = v1
+
+            if df.loc[i, 'survey_type'] in [0, 1]:
+                dy = y0 - y1
+                if abs(dy) > lim:
+                    y0 = y1 + math.copysign(lim, dy)
+
+                dx = x0 - x1
+                if abs(dx) > lim:
+                    x0 = x1 + math.copysign(lim, dx)
+            else:
+                dy = y0 - y1
+                if abs(dy) > 50:  # Detect serious errors.
+                    y0 = df.loc[i, 'y']
+
+                dx = x0 - x1
+                if abs(dx) > 50:  # Detect serious errors.
+                    x0 = df.loc[i, 'x']
+        
+            df.loc[i, 'x_augmented'] = x0
+            df.loc[i, 'y_augmented'] = y0
+
+    return(df)
+
 class Sonar:
-    '''Class for reading and parsing the content of the Lowrance '.sl2' and '.sl3' file formats used to store sonar data.
-    Setting clean=True performs some slight data cleaning including dropping unknown columns and rows and observation where the water depth is 0.'''
+    '''
+    Class for reading and parsing the content of the Lowrance '.sl2' and '.sl3' file formats used to store sonar data.
+
+    Arguments:
+    clean = True - (True is default) - Perform basic data cleaning including dropping unknown columns and rows and observation where the water depth is 0.
+    augment_coords = True - (False is default) - Perform coordinate augmentation as implemented in https://github.com/halmaia/SL3Reader.
+    '''
     
-    def __init__(self, path: str, clean: bool = True):
+    def __init__(self, path: str, clean: bool = True, augment_coords: bool = False):
         self.path = path
         self.file_header_size = 8
         self.extension = path.split(".")[-1]
@@ -125,17 +195,25 @@ class Sonar:
                                9: "40kHz_60kHz", 10: "25kHz_45kHz"}
         
         self.vars_to_keep = ["id", "survey", "datetime",
-                             "x", "y", "x_augmented", "y_augmented", 
-                             "longitude", "latitude", "smoothed_longitude", 
-                             "smoothed_latitude", "min_range", "max_range", 
-                             "water_depth", "gps_speed", "gps_heading", 
-                             "gps_altitude", "bottom_index", "frames"]
+                             "x", "y", "longitude", "latitude", 
+                             "min_range", "max_range", "water_depth", 
+                             "gps_speed", "gps_heading", "gps_altitude", 
+                             "bottom_index", "frames"]
         
+        self.augment_coords = augment_coords
+        if augment_coords:
+            self.vars_to_keep = self.vars_to_keep + ["x_augmented", "y_augmented", "longitude_augmented", "latitude_augmented"]
+
         self._read_bin()
         self._parse_header()
         self._decode()
         self._process()
         self._valid_channels()
+
+        if augment_coords:
+            self.df = self.df.groupby("survey_type", as_index=False).apply(coordinate_augmentation).reset_index(drop=True)
+            self.df["longitude_augmented"] = self._x2lon(self.df["x_augmented"])
+            self.df["latitude_augmented"] = self._y2lat(self.df["y_augmented"])
 
         if clean:
             self._select()
@@ -181,76 +259,6 @@ class Sonar:
         frame_bottom_index = ((frame_len/(self.df["max_range"]-self.df["min_range"]))*self.df["water_depth"]).astype("int32")
         return(frame_bottom_index)
     
-    def _augment_coords(self):
-        self.df['x_augmented'] = float('nan')
-        self.df['y_augmented'] = float('nan')
-
-        self.df.loc[0, 'x_augmented'] = self.df.loc[0, 'x']
-        self.df.loc[0, 'y_augmented'] = self.df.loc[0, 'y']
-
-        x0 = self.df.loc[0, 'x']
-        y0 = self.df.loc[0, 'y']
-
-        v0 = self.df.loc[0, 'gps_speed']
-        t0 = self.df.loc[0, 'seconds']
-        d0 = math.tau - self.df.loc[0, 'gps_heading'] + (math.pi / 2)
-
-        c = 1.4326
-        lim = 1.2
-
-        for i in range(1, len(self.df)):
-            t1 = self.df.loc[i, 'seconds']
-            v1 = self.df.loc[i, 'gps_speed']
-            d1 = math.tau - self.df.loc[i, 'gps_heading'] + (math.pi / 2)
-
-            x1 = self.df.loc[i, 'x']
-            y1 = self.df.loc[i, 'y']
-
-            if t1 == t0:
-                self.df.loc[i, 'x_augmented'] = x0
-                self.df.loc[i, 'y_augmented'] = y0
-            else:
-                vx0 = math.cos(d0) * v0
-                vy0 = math.sin(d0) * v0
-                vx1 = math.cos(d1) * v1
-                vy1 = math.sin(d1) * v1
-                dt = t1 - t0
-
-                x0 += c * 0.5 * (vx0 + vx1) * dt
-                y0 += c * 0.5 * (vy0 + vy1) * dt
-
-                d0 = d1
-                t0 = t1
-                v0 = v1
-
-                if self.df.loc[i, 'survey_type'] in [0, 1]:
-                    dy = y0 - y1
-                    if abs(dy) > lim:
-                        y0 = y1 + math.copysign(lim, dy)
-
-                    dx = x0 - x1
-                    if abs(dx) > lim:
-                        x0 = x1 + math.copysign(lim, dx)
-                else:
-                    dy = y0 - y1
-                    if abs(dy) > 50:  # Detect serious errors.
-                        y0 = self.df.loc[i, 'y']
-
-                    dx = x0 - x1
-                    if abs(dx) > 50:  # Detect serious errors.
-                        x0 = self.df.loc[i, 'x']
-            
-                self.df.loc[i, 'x_augmented'] = x0
-                self.df.loc[i, 'y_augmented'] = y0
-    
-    def _smooth_track(self):
-        smoothing_factor = 0.0000002
-        frame_order = range(len(self.df))
-        spline_longitude = UnivariateSpline(frame_order, self.df['longitude'], s=smoothing_factor)
-        spline_latitude = UnivariateSpline(frame_order, self.df['latitude'], s=smoothing_factor)
-        self.df["smoothed_longitude"] = spline_longitude(frame_order)
-        self.df["smoothed_latitude"] = spline_latitude(frame_order)
-    
     def _process(self):
         self.df[["water_depth", "min_range", "max_range", "gps_altitude"]] /= 3.2808399 #feet to meter
         self.df["gps_speed"] *=  0.5144 #knots to m/s
@@ -261,11 +269,9 @@ class Sonar:
         self.df["datetime"] = pd.to_datetime(hardware_time_start+self.df["seconds"], unit='s')
         self.df["bottom_index"] = self._bottom_index()
         self.frame_version = self.df["frame_version"].iloc[0]
-        self._augment_coords()
-        self.df["longitude"] = self._x2lon(self.df["x_augmented"])
-        self.df["latitude"] = self._y2lat(self.df["y_augmented"])
-        self._smooth_track()
-
+        self.df["longitude"] = self._x2lon(self.df["x"])
+        self.df["latitude"] = self._y2lat(self.df["y"])
+        
     def _valid_channels(self):
         found_channels = set(self.df["survey"].tolist())
         self.valid_channels = [i for i in self.supported_channels if i in found_channels]
@@ -320,8 +326,14 @@ class Sonar:
         
         sidescan_z = self.image("sidescan")            
 
-        sidescan_x = np.expand_dims(data["x"], axis=1) + dist_stack * np.cos(np.expand_dims(data["gps_heading"], axis=1))
-        sidescan_y = np.expand_dims(data["y"], axis=1) - dist_stack * np.sin(np.expand_dims(data["gps_heading"], axis=1))
+        if self.augment_coords:
+            sidescan_x = np.expand_dims(data["x_augmented"], axis=1) + dist_stack * np.cos(np.expand_dims(data["gps_heading"], axis=1))
+            sidescan_y = np.expand_dims(data["y_augmented"], axis=1) - dist_stack * np.sin(np.expand_dims(data["gps_heading"], axis=1))
+
+        else:
+            sidescan_x = np.expand_dims(data["x"], axis=1) + dist_stack * np.cos(np.expand_dims(data["gps_heading"], axis=1))
+            sidescan_y = np.expand_dims(data["y"], axis=1) - dist_stack * np.sin(np.expand_dims(data["gps_heading"], axis=1))
+        
         sidescan_df = pd.DataFrame({"x": sidescan_x.ravel(),
                                     "y": sidescan_y.ravel(),
                                     "z": sidescan_z.ravel()})
