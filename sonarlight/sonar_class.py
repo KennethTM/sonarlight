@@ -179,7 +179,8 @@ class Sonar:
                 frame_header_list.append(frame_head)
         
         self.df = pd.DataFrame(np.frombuffer(b''.join(frame_header_list), dtype=self.frame_dtype))
-        self.df["frames"] = [np.frombuffer(self.buffer[(i+self.frame_header_size):(i+p)], dtype="uint8") for i, p in zip(self.df["first_byte"], self.df["frame_size"])]        
+        self.df["first_byte_no_offset"] = self.df["first_byte"] - self.file_header_size
+        self.df["frames"] = [np.frombuffer(self.buffer[(i+self.frame_header_size):(i+p)], dtype="uint8") for i, p in zip(self.df["first_byte_no_offset"], self.df["frame_size"])]        
         
     def _x2lon(self, x):
         return(x/6356752.3142*(180/math.pi))
