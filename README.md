@@ -128,12 +128,9 @@ plt.scatter(mosaic.x[::10],
 ## Ressources
 The package is inspired by and builds upon other tools and descriptions for processing Lowrance sonar data, e.g. [SL3Reader](https://github.com/halmaia/SL3Reader) which includes a usefull paper, [python-sllib](https://github.com/opensounder/python-sllib), [sonaR](https://github.com/KennethTM/sonaR), [Navico_SLG_Format notes](https://www.memotech.franken.de/FileFormats/Navico_SLG_Format.pdf), older [blog post](https://www.datainwater.com/post/sonar_numpy/).
 
-## TODO
+## Release notes
 
-* Notebook with extended processing examples.
-* Improve memory/speed efficiency. The package can process large files (>1 GB) rather snappy but does consume some RAM.
-* Coordinate augmentation/correction.
-* Parse 3D data.
+0.1.5 - Fixed offset error (off by 8 bytes) when reading frames.
 
 ## Other image examples
 
