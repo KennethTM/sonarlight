@@ -28,7 +28,7 @@ The class contains a few methods for extracting data:
 * `Sonar.bottom()` method to extract the bottom (sediment) part of the the raw sonar imagery for a specific channel
 * `Sonar.bottom_intensity()` method to extract raw sonar intensity at the bottom
 
-The functionality of the class is showcased below and included in the `example_notebook.ipynb`.
+The functionality of the class is showcased below and included in the `notebooks/example_notebook.ipynb`.
 
 Example of reading a sonar file using the `example_files/example_sl2_file.sl2` file:
 
@@ -73,7 +73,7 @@ df_csv = sl2.df.copy().drop(["frames"], axis=1)
 df_csv.to_csv("sl2.csv")
 ```
 
-Examples of further processing and plotting (see also `example_notebook.ipynb`):
+Examples of further processing and plotting (see also `notebooks/example_notebook.ipynb`):
 
 ```python
 import matplotlib.pyplot as plt
@@ -130,6 +130,7 @@ The package is inspired by and builds upon other tools and descriptions for proc
 
 ## Release notes
 
+0.1.7 - [Fix coordinate augmentation](https://github.com/KennethTM/sonarlight/issues/2)
 0.1.5 - Fixed offset error (off by 8 bytes) when reading frames.
 
 ## Other image examples

@@ -3,7 +3,7 @@ from sonarlight import Sonar
 import pandas as pd
 import numpy as np
 
-class TestMyModule(unittest.TestCase):
+class TestSonarClass(unittest.TestCase):
     def setUp(self):
         self.sl2 = Sonar("example_files/example_sl2_file.sl2")
         self.sl3 = Sonar("example_files/example_sl3_file.sl3")

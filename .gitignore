@@ -53,3 +53,5 @@ ENV/
 env.bak/
 venv.bak/
 
+settings.json
+test_raster.tif

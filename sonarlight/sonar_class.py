@@ -135,7 +135,7 @@ class Sonar:
         
         self.augment_coords = augment_coords
         if augment_coords:
-            self.vars_to_keep = self.vars_to_keep + ["x_augmented", "y_augmented", "longitude_augmented", "latitude_augmented"]
+            self.vars_to_keep = self.vars_to_keep + ["longitude_augmented", "latitude_augmented", "x_augmented", "y_augmented"]
 
         self._read_bin()
         self._parse_header()
@@ -145,8 +145,6 @@ class Sonar:
 
         if augment_coords:
             self._coordinate_augmentation()
-            self.df["longitude_augmented"] = self._x2lon(self.df["x_augmented"])
-            self.df["latitude_augmented"] = self._y2lat(self.df["y_augmented"])
 
         if clean:
             self._select()
@@ -187,6 +185,12 @@ class Sonar:
 
     def _y2lat(self, y):
         return(((2*np.arctan(np.exp(y/6356752.3142)))-(math.pi/2))*(180/math.pi))
+
+    def _lon2x(self, lon):
+        return(lon * (math.pi / 180) * 6356752.3142)
+
+    def _lat2y(self, lat):
+        return(math.log(math.tan((lat * (math.pi / 180) + (math.pi / 2)) / 2)) * 6356752.3142)
     
     def _bottom_index(self):
         frame_len = np.array([len(i) for i in self.df["frames"]])
@@ -207,21 +211,14 @@ class Sonar:
         self.df["latitude"] = self._y2lat(self.df["y"])
 
     def _coordinate_augmentation(self):
+        self.df['longitude_augmented'] = self.df['longitude']
+        self.df['latitude_augmented'] = self.df['latitude']
 
-        self.df['x_augmented'] = float('nan')
-        self.df['y_augmented'] = float('nan')
-
-        self.df.loc[0, 'x_augmented'] = self.df.loc[0, 'x']
-        self.df.loc[0, 'y_augmented'] = self.df.loc[0, 'y']
-
-        x0 = self.df.loc[0, 'x']
-        y0 = self.df.loc[0, 'y']
-
+        longitude0 = self.df.loc[0, 'longitude']
+        latitude0 = self.df.loc[0, 'latitude']
         v0 = self.df.loc[0, 'gps_speed']
         t0 = self.df.loc[0, 'seconds']
         d0 = math.tau - self.df.loc[0, 'gps_heading'] + (math.pi / 2)
-
-        c = 1.4326
         lim = 1.2
 
         for i in range(1, len(self.df)):
@@ -229,45 +226,44 @@ class Sonar:
             v1 = self.df.loc[i, 'gps_speed']
             d1 = math.tau - self.df.loc[i, 'gps_heading'] + (math.pi / 2)
 
-            x1 = self.df.loc[i, 'x']
-            y1 = self.df.loc[i, 'y']
+            dt = t1 - t0
+            v_longitude0 = math.cos(d0) * v0
+            v_latitude0 = math.sin(d0) * v0
+            v_longitude1 = math.cos(d1) * v1
+            v_latitude1 = math.sin(d1) * v1
 
-            if t1 == t0:
-                self.df.loc[i, 'x_augmented'] = x0
-                self.df.loc[i, 'y_augmented'] = y0
+            latitude0 += dt * 0.5 * (v_latitude0 + v_latitude1) * 180 / (math.pi * 6356752.3142)
+            longitude0 += dt * 0.5 * (v_longitude0 + v_longitude1) * 180 / (math.pi * math.cos(math.radians(latitude0)) * 6356752.3142)
+
+            d0, t0, v0 = d1, t1, v1
+
+            if self.df.loc[i, 'survey_type'] in [0, 1]:
+                dy = self.get_latitude_distance(latitude0, self.df.loc[i, 'latitude'])
+                if abs(dy) > lim:
+                    latitude0 = self.df.loc[i, 'latitude'] + math.copysign(math.degrees(lim / 6356752.3142), latitude0 - self.df.loc[i, 'latitude'])
+
+                dx = self.get_longitude_distance(longitude0, self.df.loc[i, 'longitude'], latitude0)
+                if abs(dx) > lim:
+                    longitude0 = self.df.loc[i, 'longitude'] + math.copysign(math.degrees(lim / (6356752.3142 * math.cos(math.radians(latitude0)))), longitude0 - self.df.loc[i, 'longitude'])
             else:
-                vx0 = math.cos(d0) * v0
-                vy0 = math.sin(d0) * v0
-                vx1 = math.cos(d1) * v1
-                vy1 = math.sin(d1) * v1
-                dt = t1 - t0
+                dy = self.get_latitude_distance(latitude0, self.df.loc[i, 'latitude'])
+                if abs(dy) > 50:
+                    latitude0 = self.df.loc[i, 'latitude']
 
-                x0 += c * 0.5 * (vx0 + vx1) * dt
-                y0 += c * 0.5 * (vy0 + vy1) * dt
+                dx = self.get_longitude_distance(longitude0, self.df.loc[i, 'longitude'], latitude0)
+                if abs(dx) > 50:
+                    longitude0 = self.df.loc[i, 'longitude']
 
-                d0 = d1
-                t0 = t1
-                v0 = v1
+            self.df.loc[i, 'longitude_augmented'] = longitude0
+            self.df.loc[i, 'latitude_augmented'] = latitude0
+            self.df.loc[i, 'x_augmented'] = self._lon2x(longitude0)
+            self.df.loc[i, 'y_augmented'] = self._lat2y(latitude0)
 
-                if self.df.loc[i, 'survey_type'] in [0, 1]:
-                    dy = y0 - y1
-                    if abs(dy) > lim:
-                        y0 = y1 + math.copysign(lim, dy)
+    def get_latitude_distance(self, lat1: float, lat2: float) -> float:
+        return math.radians(abs(lat2 - lat1)) * 6356752.3142
 
-                    dx = x0 - x1
-                    if abs(dx) > lim:
-                        x0 = x1 + math.copysign(lim, dx)
-                else:
-                    dy = y0 - y1
-                    if abs(dy) > 50:  # Detect serious errors.
-                        y0 = self.df.loc[i, 'y']
-
-                    dx = x0 - x1
-                    if abs(dx) > 50:  # Detect serious errors.
-                        x0 = self.df.loc[i, 'x']
-            
-                self.df.loc[i, 'x_augmented'] = x0
-                self.df.loc[i, 'y_augmented'] = y0
+    def get_longitude_distance(self, lon1: float, lon2: float, lat: float) -> float:
+        return math.radians(abs(lon2 - lon1)) * (6356752.3142 * math.cos(math.radians(lat)))
         
     def _valid_channels(self):
         found_channels = set(self.df["survey"].tolist())
