@@ -131,6 +131,7 @@ The package is inspired by and builds upon other tools and descriptions for proc
 ## Release notes
 
 0.1.7 - [Fix coordinate augmentation](https://github.com/KennethTM/sonarlight/issues/2)
+
 0.1.5 - Fixed offset error (off by 8 bytes) when reading frames.
 
 ## Other image examples
