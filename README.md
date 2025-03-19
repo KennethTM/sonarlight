@@ -15,6 +15,12 @@ The package requires the `numpy` and `pandas` packages to be installed.
 ## Example data
 Small example files of the `.sl2` and `.sl3` formats are provided in the `example_files` folder.
 
+## Notebooks
+Several Jupyter notebooks are included to demonstrate how to use the `sonarlight` package:
+
+- [`example_data_and_plotting.ipynb`](notebooks/example_data_and_plotting.ipynb): Demonstrates the main functionality of the `Sonar` class with basic plotting examples
+- [`example_plant_analysis.ipynb`](notebooks/example_plant_analysis.ipynb): Shows a simple example of plant detection and height analysis
+
 ## Usage
 Once installed, you can use the `Sonar` class to read and parse sonar data from a `.sl2` or `.sl3` file.
 
@@ -28,9 +34,7 @@ The class contains a few methods for extracting data:
 * `Sonar.bottom()` method to extract the bottom (sediment) part of the the raw sonar imagery for a specific channel
 * `Sonar.bottom_intensity()` method to extract raw sonar intensity at the bottom
 
-The functionality of the class is showcased below and included in the `notebooks/example_notebook.ipynb`.
-
-Example of reading a sonar file using the `example_files/example_sl2_file.sl2` file:
+Example of reading a sonar file using the `example_files/example_data_and_plotting.sl2` file:
 
 ```python
 from sonarlight import Sonar
@@ -73,7 +77,7 @@ df_csv = sl2.df.copy().drop(["frames"], axis=1)
 df_csv.to_csv("sl2.csv")
 ```
 
-Examples of further processing and plotting (see also `notebooks/example_notebook.ipynb`):
+Examples of further processing and plotting (see also notebooks in `notebooks/` folder):
 
 ```python
 import matplotlib.pyplot as plt
