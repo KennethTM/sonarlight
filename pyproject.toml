@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sonarlight"
+dynamic = ["version"]
+description = "sonarlight"
+readme = "README.md"
+authors = [{ name = "Kenneth Thorø Martinsen", email = "kenneth2810@gmail.com" }]
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["python"]
+requires-python = ">=3.8"
+dependencies = ["numpy", "pandas"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Oceanography",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "sonarlight.version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["sonarlight*"]
