@@ -29,3 +29,6 @@ version = { attr = "sonarlight.version.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["sonarlight*"]
+
+[dependency-groups]
+dev = ["build", "twine"]
